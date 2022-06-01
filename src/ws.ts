@@ -22,7 +22,10 @@ io.on("connection", (socket) => {
     });
 
     socket.on("player/change", ({ id, field, value }) => {
-        console.log(id, field, value);
         game.changePlayer(id, field, value);
+    });
+
+    socket.on("player/roll", () => {
+        game.rollPlayers();
     });
 });

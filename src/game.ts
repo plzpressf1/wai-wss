@@ -7,6 +7,7 @@ class Player {
 
     socket: Socket;
     connected = false;
+    slot = 0;
     name = "";
     secret = "";
 }
@@ -47,6 +48,22 @@ export class Game {
         }
     }
 
+    rollPlayers() {
+        const rolls = [];
+        for (const id of this.players.keys()) {
+            rolls.push(id);
+        }
+        let i = 0;
+        while (rolls.length) {
+            const index = Math.floor(Math.random() * rolls.length);
+            // @ts-ignore
+            const player = this.players.get(rolls[index]);
+            if (player) player.slot = i++;
+            rolls.splice(index, 1);
+        }
+        this.broadcast("player/list", { players: this.preparePlayers() });
+    }
+
     private broadcast(event: string, payload: any) {
         for (const player of this.players.values()) {
             if (player.connected) {
@@ -60,11 +77,13 @@ export class Game {
         for (const [id, player] of this.players.entries()) {
             players.push({
                 id,
+                slot: player.slot,
                 name: player.name,
                 secret: player.secret,
                 connected: player.connected,
             });
         }
+        players.sort((a, b) => a.slot - b.slot);
         return players;
     }
 
