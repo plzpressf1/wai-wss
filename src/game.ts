@@ -10,6 +10,7 @@ class Player {
     slot = 0;
     name = "";
     secret = "";
+    picture = "";
 }
 
 export class Game {
@@ -80,6 +81,7 @@ export class Game {
                 slot: player.slot,
                 name: player.name,
                 secret: player.secret,
+                picture: player.picture,
                 connected: player.connected,
             });
         }
