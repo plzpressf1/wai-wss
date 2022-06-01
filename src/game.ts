@@ -27,7 +27,7 @@ export class Game {
         player.socket = socket;
         player.connected = true;
         player.name = name;
-        this.broadcast("player/list", { players: this.preparePlayers() });
+        this.broadcastPlayerList();
     }
 
     disconnectPlayer(id: string) {
@@ -37,6 +37,9 @@ export class Game {
             if (this.isEmpty()) {
                 this.players = new Map();
             }
+            else {
+                this.broadcastPlayerList();
+            }
         }
     }
 
@@ -45,7 +48,7 @@ export class Game {
         if (player) {
             // @ts-ignore
             player[field] = value;
-            this.broadcast("player/list", { players: this.preparePlayers() });
+            this.broadcastPlayerList();
         }
     }
 
@@ -62,28 +65,40 @@ export class Game {
             if (player) player.slot = i++;
             rolls.splice(index, 1);
         }
-        this.broadcast("player/list", { players: this.preparePlayers() });
+        this.broadcastPlayerList();
     }
 
-    private broadcast(event: string, payload: any) {
-        for (const player of this.players.values()) {
+    private broadcastPlayerList() {
+        for (const [id, player] of this.players.entries()) {
             if (player.connected) {
-                player.socket?.emit(event, payload);
+                player.socket?.emit("player/list", {
+                    players: this.preparePlayers(id)
+                });
             }
         }
     }
 
-    private preparePlayers() {
+    private preparePlayers(me: string) {
         const players = [];
         for (const [id, player] of this.players.entries()) {
-            players.push({
-                id,
-                slot: player.slot,
-                name: player.name,
-                secret: player.secret,
-                picture: player.picture,
-                connected: player.connected,
-            });
+            if (me === id) {
+                players.push({
+                    id,
+                    slot: player.slot,
+                    name: player.name,
+                    connected: player.connected,
+                });
+            }
+            else {
+                players.push({
+                    id,
+                    slot: player.slot,
+                    name: player.name,
+                    secret: player.secret,
+                    picture: player.picture,
+                    connected: player.connected,
+                });
+            }
         }
         players.sort((a, b) => a.slot - b.slot);
         return players;
