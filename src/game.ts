@@ -7,7 +7,8 @@ class Player {
 
     socket: Socket;
     connected = false;
-    name: string = "";
+    name = "";
+    secret = "";
 }
 
 export class Game {
@@ -37,10 +38,11 @@ export class Game {
         }
     }
 
-    changePlayerName(id: string, name: string) {
+    changePlayer(id: string, field: string, value: string) {
         const player = this.players.get(id);
         if (player) {
-            player.name = name;
+            // @ts-ignore
+            player[field] = value;
             this.broadcast("player/list", { players: this.preparePlayers() });
         }
     }
@@ -59,6 +61,7 @@ export class Game {
             players.push({
                 id,
                 name: player.name,
+                secret: player.secret,
                 connected: player.connected,
             });
         }

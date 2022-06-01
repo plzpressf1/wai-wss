@@ -21,8 +21,8 @@ io.on("connection", (socket) => {
         game.disconnectPlayer(id);
     });
 
-    socket.on("player/name", ({ id, name }) => {
-        game.changePlayerName(id, name);
+    socket.on("player/change", ({ id, field, value }) => {
+        console.log(id, field, value);
+        game.changePlayer(id, field, value);
     });
-
 });
