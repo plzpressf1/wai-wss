@@ -20,7 +20,8 @@
     },
     "scripts": {
         "build": "rimraf ./build && tsc",
-        "start": "yarn build && node build/index.js",
+        "bs": "yarn build && node build/index.js",
+        "start": "node build/index.js",
         "start:dev": "nodemon"
     }
 }

@@ -11,6 +11,10 @@ class Player {
 }
 
 export class Game {
+    constructor() {
+        console.log("bootstrapped");
+    }
+
     connectPlayer(id: string, name: string, socket: Socket) {
         let player = this.players.get(id);
         if (!player) {
