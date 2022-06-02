@@ -43,6 +43,15 @@ export class Game {
         }
     }
 
+    kickPlayer(id: string) {
+        const player = this.players.get(id);
+        if (player) {
+            if (player.connected) return;
+            this.players.delete(id);
+            this.broadcastPlayerList();
+        }
+    }
+
     changePlayer(id: string, field: string, value: string) {
         const player = this.players.get(id);
         if (player) {

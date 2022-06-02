@@ -28,4 +28,8 @@ io.on("connection", (socket) => {
     socket.on("player/roll", () => {
         game.rollPlayers();
     });
+
+    socket.on("player/kick", ({ id }) => {
+        game.kickPlayer(id);
+    });
 });
