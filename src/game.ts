@@ -1,8 +1,10 @@
 import { Socket } from "socket.io";
+import { GameFlow } from "./flow";
 
-class Player {
-    constructor(socket: Socket) {
+export class Player {
+    constructor(socket: Socket, slot: number) {
         this.socket = socket;
+        this.slot = slot;
     }
 
     socket: Socket;
@@ -13,20 +15,45 @@ class Player {
     picture = "";
 }
 
+interface GameSettings {
+    timer: boolean;
+    playerTime: number; // player time to ask all questions in seconds
+    extraTime: number;
+    questionsNumber: number;
+}
+
+interface GameState {
+    started: boolean;
+    running: boolean;
+}
+
 export class Game {
     constructor() {
         console.log("bootstrapped");
+        this.settings = {
+            timer: false,
+            extraTime: 10,
+            playerTime: 120,
+            questionsNumber: 3,
+        };
+        this.state = {
+            started: false,
+            running: false,
+        };
     }
 
     connectPlayer(id: string, name: string, socket: Socket) {
         let player = this.players.get(id);
         if (!player) {
-            player = new Player(socket);
+            player = new Player(socket, this.players.size);
             this.players.set(id, player);
         }
         player.socket = socket;
         player.connected = true;
         player.name = name;
+        player.socket.emit("settings/list", { settings: this.settings });
+        player.socket.emit("state/list", { state: this.state });
+        player.socket.emit("controls/list", { controls: this.flow.prepareControls() })
         this.broadcastPlayerList();
     }
 
@@ -44,11 +71,20 @@ export class Game {
     }
 
     kickPlayer(id: string) {
+        if (this.state.started) return;
         const player = this.players.get(id);
         if (player) {
             if (player.connected) return;
+            const slot = player.slot;
             this.players.delete(id);
+            this.fitSlots(slot);
             this.broadcastPlayerList();
+        }
+    }
+
+    fitSlots(slot: number) {
+        for (const player of this.players.values()) {
+            if (player.slot > slot) player.slot--;
         }
     }
 
@@ -62,6 +98,7 @@ export class Game {
     }
 
     rollPlayers() {
+        if (this.settings.timer && this.state.started) return;
         const rolls = [];
         for (const id of this.players.keys()) {
             rolls.push(id);
@@ -74,7 +111,62 @@ export class Game {
             if (player) player.slot = i++;
             rolls.splice(index, 1);
         }
+        this.state.started = false;
         this.broadcastPlayerList();
+    }
+
+    updateSettings(settings: GameSettings) {
+        this.settings = settings;
+        if (!this.settings.timer) {
+            this.state.running = false;
+            this.flow.setRunning(false);
+            this.broadcast("state/list", { state: this.state });
+        }
+        this.broadcast("settings/list", { settings: this.settings });
+    }
+
+    setRunning(running: boolean) {
+        this.state.running = running;
+        if (!this.state.started) this.start();
+        else this.flow.setRunning(running);
+        this.broadcast("state/list", { state: this.state });
+    }
+
+    start() {
+        if (!this.state.running) return;
+        this.state.started = true;
+        this.flow.start(this.players);
+    }
+
+    getNextPlayerId(id: string) {
+        let slot = 0;
+        if (id) {
+            const player = this.players.get(id);
+            if (player) slot = player.slot + 1;
+            if (slot >= this.players.size) slot = 0;
+        }
+        for (const [key, player] of this.players.entries()) {
+            if (player.slot === slot) return key;
+        }
+        return "";
+    }
+
+    getPlayerSlot(id: string) {
+        const player = this.players.get(id);
+        return player?.slot ?? 0;
+    }
+
+    isPlayerConnected(id: string) {
+        const player = this.players.get(id);
+        return player?.connected ?? false;
+    }
+
+    broadcast(event: string, payload: any) {
+        for (const player of this.players.values()) {
+            if (player.connected) {
+                player.socket?.emit(event, payload);
+            }
+        }
     }
 
     private broadcastPlayerList() {
@@ -121,4 +213,7 @@ export class Game {
     }
 
     private players: Map<string, Player> = new Map();
+    public settings: GameSettings;
+    private readonly state: GameState;
+    readonly flow: GameFlow = new GameFlow(this);
 }

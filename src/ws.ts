@@ -32,4 +32,16 @@ io.on("connection", (socket) => {
     socket.on("player/kick", ({ id }) => {
         game.kickPlayer(id);
     });
+
+    socket.on("settings/change", ({ settings }) => {
+        game.updateSettings(settings);
+    });
+
+    socket.on("state/running", ({ running }) => {
+        game.setRunning(running);
+    });
+
+    socket.on("flow/decision", ({ id, decision }) => {
+        game.flow.changeDecision(id, decision);
+    });
 });
