@@ -45,12 +45,17 @@ export class Game {
     connectPlayer(id: string, name: string, socket: Socket) {
         let player = this.players.get(id);
         if (!player) {
+            if (this.state.started) {
+                socket.emit("access", { access: "denied" });
+                return;
+            }
             player = new Player(socket, this.players.size);
             this.players.set(id, player);
         }
         player.socket = socket;
         player.connected = true;
         player.name = name;
+        socket.emit("access", { access: "granted" });
         player.socket.emit("settings/list", { settings: this.settings });
         player.socket.emit("state/list", { state: this.state });
         player.socket.emit("controls/list", { controls: this.flow.prepareControls() })
@@ -118,6 +123,7 @@ export class Game {
     updateSettings(settings: GameSettings) {
         this.settings = settings;
         if (!this.settings.timer) {
+            this.state.started = false;
             this.state.running = false;
             this.flow.setRunning(false);
             this.broadcast("state/list", { state: this.state });
@@ -127,8 +133,10 @@ export class Game {
 
     setRunning(running: boolean) {
         this.state.running = running;
-        if (!this.state.started) this.start();
-        else this.flow.setRunning(running);
+        if (running) {
+            if (!this.state.started) this.start();
+            else this.flow.setRunning(running);
+        }
         this.broadcast("state/list", { state: this.state });
     }
 
