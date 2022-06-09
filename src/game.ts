@@ -32,7 +32,7 @@ export class Game {
         console.log("bootstrapped");
         this.settings = {
             timer: false,
-            extraTime: 10,
+            extraTime: 20,
             playerTime: 120,
             questionsNumber: 3,
         };
@@ -121,7 +121,7 @@ export class Game {
     }
 
     updateSettings(settings: GameSettings) {
-        this.settings = settings;
+        this.settings = this.validateSettings(settings);
         if (!this.settings.timer) {
             this.state.started = false;
             this.state.running = false;
@@ -129,6 +129,19 @@ export class Game {
             this.broadcast("state/list", { state: this.state });
         }
         this.broadcast("settings/list", { settings: this.settings });
+    }
+
+    validateSettings(settings: GameSettings) {
+        if (settings.questionsNumber < 1) settings.questionsNumber = 1;
+        if (settings.questionsNumber > 5) settings.questionsNumber = 5;
+
+        if (settings.playerTime < 15) settings.playerTime = 15;
+        if (settings.playerTime > 600) settings.playerTime = 600;
+
+        if (settings.extraTime < 5) settings.extraTime = 5;
+        if (settings.extraTime > 60) settings.extraTime = 60;
+
+        return settings;
     }
 
     setRunning(running: boolean) {
