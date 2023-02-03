@@ -13,6 +13,7 @@ export class Player {
     name = "";
     secret = "";
     picture = "";
+    correct = "no";
 }
 
 interface GameSettings {
@@ -98,6 +99,9 @@ export class Game {
         if (player) {
             // @ts-ignore
             player[field] = value;
+            if (field === "secret" || field === "picture") {
+                player["correct"] = "no";
+            }
             this.broadcastPlayerList();
         }
     }
@@ -203,7 +207,7 @@ export class Game {
     private preparePlayers(me: string) {
         const players = [];
         for (const [id, player] of this.players.entries()) {
-            if (me === id) {
+            if (me === id && player.correct !== "yes") {
                 players.push({
                     id,
                     slot: player.slot,
@@ -216,6 +220,7 @@ export class Game {
                     id,
                     slot: player.slot,
                     name: player.name,
+                    correct: player.correct,
                     secret: player.secret,
                     picture: player.picture,
                     connected: player.connected,
